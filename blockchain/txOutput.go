@@ -4,7 +4,6 @@ import (
 	"bytes"
 
 	"github.com/dev-rodrigobaliza/go-blockchain/base58"
-	"github.com/dev-rodrigobaliza/go-blockchain/crypto"
 	"github.com/dev-rodrigobaliza/go-blockchain/wallet"
 )
 
@@ -13,24 +12,11 @@ type TxOutput struct {
 	PubKeyHash []byte
 }
 
-func NewTxOutput(value int, address string) *TxOutput {
+func NewTxOutput(value int, address []byte) *TxOutput {
 	txo := TxOutput{value, nil}
-	txo.Lock([]byte(address))
+	txo.Lock(address)
 
 	return &txo
-}
-
-type TxInput struct {
-	ID        []byte
-	Out       int
-	Signature []byte
-	PubKey    []byte
-}
-
-func (in *TxInput) UsesKey(pubKeyHash []byte) bool {
-	lockingHash := crypto.PublicKeyHash(in.PubKey)
-
-	return bytes.Equal(lockingHash, pubKeyHash)
 }
 
 func (out *TxOutput) Lock(address []byte) {

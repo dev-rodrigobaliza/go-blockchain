@@ -21,13 +21,13 @@ import (
 
 type Transaction struct {
 	ID      []byte
-	Inputs  []TxInput
-	Outputs []TxOutput
+	Inputs  []*TxInput
+	Outputs []*TxOutput
 }
 
-func NewTransaction(from, to string, amount int, chain *BlockChain) *Transaction {
-	var inputs []TxInput
-	var outputs []TxOutput
+func NewTransaction(from, to string, amount int, UTXO *UTXOSet) *Transaction {
+	var inputs []*TxInput
+	var outputs []*TxOutput
 
 	wallets, err := wallet.NewWallets()
 	utils.Handle(err)
@@ -35,7 +35,7 @@ func NewTransaction(from, to string, amount int, chain *BlockChain) *Transaction
 	w := wallets.GetWallet(from)
 	pubKeyHash := crypto.PublicKeyHash(w.PublicKey)
 
-	acc, validOutputs := chain.FindSpendableOutputs(pubKeyHash, amount)
+	acc, validOutputs := UTXO.FindSpendableOutputs(pubKeyHash, amount)
 	if acc < amount {
 		log.Panic("Error: not enough funds")
 	}
@@ -45,19 +45,19 @@ func NewTransaction(from, to string, amount int, chain *BlockChain) *Transaction
 		utils.Handle(err)
 
 		for _, out := range outs {
-			input := TxInput{txID, out, nil, w.PublicKey}
+			input := NewTxInput(txID, out, nil, w.PublicKey)
 			inputs = append(inputs, input)
 		}
 	}
 
-	outputs = append(outputs, *NewTxOutput(amount, to))
+	outputs = append(outputs, NewTxOutput(amount, []byte(to)))
 	if acc > amount {
-		outputs = append(outputs, *NewTxOutput(acc - amount, from))
+		outputs = append(outputs, NewTxOutput(acc-amount, []byte(from)))
 	}
 
 	tx := Transaction{nil, inputs, outputs}
 	tx.ID = tx.Hash()
-	chain.SignTransaction(&tx, *w.GetPrivateKey())
+	UTXO.Blockchain.SignTransaction(&tx, *w.GetPrivateKey())
 
 	return &tx
 }
@@ -146,15 +146,15 @@ func (tx Transaction) String() string {
 }
 
 func (tx *Transaction) TrimmedCopy() Transaction {
-	var inputs []TxInput
-	var outputs []TxOutput
+	var inputs []*TxInput
+	var outputs []*TxOutput
 
 	for _, input := range tx.Inputs {
-		inputs = append(inputs, TxInput{input.ID, input.Out, nil, nil})
+		inputs = append(inputs, NewTxInput(input.ID, input.Out, nil, nil))
 	}
 
 	for _, output := range tx.Outputs {
-		outputs = append(outputs, TxOutput{output.Value, output.PubKeyHash})
+		outputs = append(outputs, NewTxOutput(output.Value, output.PubKeyHash))
 	}
 
 	txCopy := Transaction{tx.ID, inputs, outputs}
@@ -195,8 +195,12 @@ func (tx *Transaction) Verify(prevTXs map[string]*Transaction) bool {
 		x.SetBytes(input.PubKey[:(keyLen / 2)])
 		y.SetBytes(input.PubKey[(keyLen / 2):])
 
-		rawPubKey := ecdsa.PublicKey{curve, &x, &y}
-		if !ecdsa.Verify(&rawPubKey, txCopy.ID, &r, &s) {
+		rawPubKey := &ecdsa.PublicKey{
+			Curve: curve,
+			X:     &x,
+			Y:     &y,
+		}
+		if !ecdsa.Verify(rawPubKey, txCopy.ID, &r, &s) {
 			return false
 		}
 	}
@@ -209,10 +213,10 @@ func CoinbaseTx(to, data string) *Transaction {
 		data = fmt.Sprintf("coins to %s", to)
 	}
 
-	txIn := TxInput{[]byte{}, -1, nil, []byte(data)}
-	txOut := NewTxOutput(100, to)
+	txIn := NewTxInput([]byte{}, -1, nil, []byte(data))
+	txOut := NewTxOutput(100, []byte(to))
 
-	tx := Transaction{nil, []TxInput{txIn}, []TxOutput{*txOut}}
+	tx := Transaction{nil, []*TxInput{txIn}, []*TxOutput{txOut}}
 	tx.SetID()
 
 	return &tx
