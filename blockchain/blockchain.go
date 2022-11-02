@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/dev-rodrigobaliza/go-blockchain/utils"
 	"github.com/dgraph-io/badger"
 )
 
@@ -23,7 +24,7 @@ type BlockChain struct {
 
 func CheckDBPath() string {
 	curPath, err := os.Getwd()
-	Handle(err)
+	utils.Handle(err)
 
 	path := filepath.Join(curPath, dbPath)
 	_ = os.Mkdir(path, os.ModePerm)
@@ -40,7 +41,7 @@ func GetDB() *badger.DB {
 	path := CheckDBPath()
 	opts := badger.DefaultOptions(path)
 	db, err := badger.Open(opts)
-	Handle(err)
+	utils.Handle(err)
 
 	return db
 }
@@ -59,14 +60,14 @@ func InitBlockChain(address string) *BlockChain {
 		genesis := Genesis(cbtx)
 		fmt.Println("Genesis created")
 		err := txn.Set(genesis.Hash, genesis.Serialize())
-		Handle(err)
+		utils.Handle(err)
 		err = txn.Set([]byte("lh"), genesis.Hash)
 
 		lastHash = genesis.Hash
 
 		return err
 	})
-	Handle(err)
+	utils.Handle(err)
 
 	blockChain := BlockChain{lastHash, db}
 
@@ -84,7 +85,7 @@ func ContinueBlockChain(address string) *BlockChain {
 	var lastHash []byte
 	err := db.Update(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte("lh"))
-		Handle(err)
+		utils.Handle(err)
 
 		err = item.Value(func(val []byte) error {
 			lastHash = append([]byte{}, val...)
@@ -93,7 +94,7 @@ func ContinueBlockChain(address string) *BlockChain {
 		})
 		return err
 	})
-	Handle(err)
+	utils.Handle(err)
 
 	blockChain := BlockChain{lastHash, db}
 
@@ -105,7 +106,7 @@ func (chain *BlockChain) AddBlock(transactions []*Transaction) {
 
 	err := chain.Database.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte("lh"))
-		Handle(err)
+		utils.Handle(err)
 
 		err = item.Value(func(val []byte) error {
 			lastHash = append([]byte{}, val...)
@@ -115,13 +116,13 @@ func (chain *BlockChain) AddBlock(transactions []*Transaction) {
 
 		return err
 	})
-	Handle(err)
+	utils.Handle(err)
 
 	newBlock := CreateBlock(transactions, lastHash)
 
 	err = chain.Database.Update(func(txn *badger.Txn) error {
 		err := txn.Set(newBlock.Hash, newBlock.Serialize())
-		Handle(err)
+		utils.Handle(err)
 
 		err = txn.Set([]byte("lh"), newBlock.Hash)
 
@@ -129,7 +130,7 @@ func (chain *BlockChain) AddBlock(transactions []*Transaction) {
 
 		return err
 	})
-	Handle(err)
+	utils.Handle(err)
 }
 
 func (chain *BlockChain) Iterator() *BlockChainIterator {
