@@ -3,10 +3,12 @@ package cli
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"runtime"
 	"strconv"
 
+	"github.com/dev-rodrigobaliza/go-blockchain/base58"
 	"github.com/dev-rodrigobaliza/go-blockchain/blockchain"
 	"github.com/dev-rodrigobaliza/go-blockchain/utils"
 	"github.com/dev-rodrigobaliza/go-blockchain/wallet"
@@ -60,11 +62,13 @@ func (cli *CommandLine) printChain() {
 	for {
 		block := iter.Next()
 
-		fmt.Printf("Previous Hash: %x\n", block.PrevHash)
 		fmt.Printf("Hash: %x\n", block.Hash)
-
+		fmt.Printf("Previous Hash: %x\n", block.PrevHash)
 		pow := blockchain.NewProof(block)
 		fmt.Printf("PoW: %s\n", strconv.FormatBool(pow.Validate()))
+		for _, tx := range block.Transactions {
+			fmt.Println(tx)
+		}
 		fmt.Println()
 
 		if len(block.PrevHash) == 0 {
@@ -74,17 +78,27 @@ func (cli *CommandLine) printChain() {
 }
 
 func (cli *CommandLine) createBlockChain(address string) {
+	if !wallet.ValidateAddress(address) {
+		log.Panic("Address is not valid")
+	}
+
 	chain := blockchain.InitBlockChain(address)
 	chain.Database.Close()
 	fmt.Println("Finished")
 }
 
 func (cli *CommandLine) getBalance(address string) {
+	if !wallet.ValidateAddress(address) {
+		log.Panic("Address is not valid")
+	}
+
 	chain := blockchain.ContinueBlockChain(address)
 	defer chain.Database.Close()
 
 	balance := 0
-	UTXOs := chain.FindUTXO(address)
+	pubKeyHash := base58.Decode([]byte(address))
+	pubKeyHash = pubKeyHash[1:len(pubKeyHash)-wallet.ChecksumLength]
+	UTXOs := chain.FindUTXO(pubKeyHash)
 
 	for _, out := range UTXOs {
 		balance += out.Value
@@ -94,6 +108,14 @@ func (cli *CommandLine) getBalance(address string) {
 }
 
 func (cli *CommandLine) send(from, to string, amount int) {
+	if !wallet.ValidateAddress(from) {
+		log.Panic("From address is not valid")
+	}
+
+	if !wallet.ValidateAddress(to) {
+		log.Panic("To address is not valid")
+	}
+
 	chain := blockchain.ContinueBlockChain(from)
 	defer chain.Database.Close()
 

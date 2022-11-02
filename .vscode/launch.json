@@ -13,12 +13,36 @@
             "args": ["createwallet"]
         },
         {
+            "name": "cli - create blockchain",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/main.go",
+            "args": [
+                "createblockchain",
+                "-address", "1GhpryoFdsojbgPc4wdRUgj1yMbHn5J93q",
+            ]
+        },
+        {
             "name": "cli - list addresses",
             "type": "go",
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
             "args": ["listaddresses"]
+        },
+        {
+            "name": "cli - send",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/main.go",
+            "args": [
+                "send",
+                "-from", "1GhpryoFdsojbgPc4wdRUgj1yMbHn5J93q",
+                "-to", "16Kdy7qxkYhbGVm9kHpydkcVoNdBGr2eY7",
+                "-amount", "30",
+            ]
         }
     ]
 }

@@ -3,6 +3,7 @@ package wallet
 import (
 	"os"
 
+	"github.com/dev-rodrigobaliza/go-blockchain/crypto"
 	"github.com/dev-rodrigobaliza/go-blockchain/utils"
 	"github.com/goccy/go-json"
 )
@@ -85,13 +86,15 @@ func (ws *Wallets) fromBytes(buffer []byte) error {
 
 	for address := range ws.Wallets {
 		wallet := ws.Wallets[address]
-		wallet.privateKey = privateKeyFromBytes(wallet.PrivateKey)
+		wallet.privateKey = crypto.PrivateKeyFromBytes(wallet.PrivateKey)
 	}
 
 	return nil
 }
 
 func (ws *Wallets) toBytes() []byte {
-	buffer, _ := json.Marshal(ws)
+	buffer, err := json.Marshal(ws)
+	utils.Handle(err)
+
 	return buffer
 }

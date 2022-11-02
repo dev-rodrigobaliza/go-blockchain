@@ -2,10 +2,13 @@ package wallet
 
 import (
 	"crypto/ecdsa"
+
+	"github.com/dev-rodrigobaliza/go-blockchain/base58"
+	"github.com/dev-rodrigobaliza/go-blockchain/crypto"
 )
 
 const (
-	checksumLength = 4
+	ChecksumLength = 4
 	version        = byte(0x00)
 )
 
@@ -16,22 +19,22 @@ type Wallet struct {
 }
 
 func NewWallet() *Wallet {
-	private, privateBytes, public := newKeyPair()
+	private, privateBytes, public := crypto.NewKeyPair()
 	wallet := Wallet{private, privateBytes, public}
 
 	return &wallet
 }
 
 func (w *Wallet) Address() []byte {
-	pubHash := publicKeyHash(w.PublicKey)
+	pubHash := crypto.PublicKeyHash(w.PublicKey)
 	versionedHash := append([]byte{version}, pubHash...)
 	checksum := checksum(versionedHash)
 	fullHash := append(versionedHash, checksum...)
-	address := base58Encode(fullHash)
-
-	// fmt.Printf("pub key: %x\n", w.PublicKey)
-	// fmt.Printf("pub hash: %x\n", pubHash)
-	// fmt.Printf("address: %s\n", address)
+	address := base58.Encode(fullHash)
 
 	return address
+}
+
+func (w *Wallet) GetPrivateKey() *ecdsa.PrivateKey {
+	return w.privateKey
 }
