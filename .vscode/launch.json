@@ -20,7 +20,7 @@
             "program": "${workspaceFolder}/main.go",
             "args": [
                 "createblockchain",
-                "-address", "1GhpryoFdsojbgPc4wdRUgj1yMbHn5J93q",
+                "-address", "14RdqLFmyHnuVDXQd4cCvvabZfJgRDFbdn",
             ]
         },
         {
@@ -39,21 +39,40 @@
             "program": "${workspaceFolder}/main.go",
             "args": [
                 "send",
-                "-from", "1Lpkeiqkdu5zuPioEg3SY9tp9312ZrUUV2",
-                "-to", "13DNFhe23nU4C8d6DwSRgHJfqnazMKZp4B",
-                "-amount", "30",
+                "-from", "14RdqLFmyHnuVDXQd4cCvvabZfJgRDFbdn",
+                "-to", "1FzEorGvo8dsFMqEoC1VWb5GzyCTBsyf8Z",
+                "-amount", "5",
             ]
         },
         {
-            "name": "cli - getbalance",
+            "name": "cli - getbalance 1",
             "type": "go",
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
             "args": [
                 "getbalance",
-                "-address", "1Lpkeiqkdu5zuPioEg3SY9tp9312ZrUUV2",
+                "-address", "14RdqLFmyHnuVDXQd4cCvvabZfJgRDFbdn",
             ]
-        }
+        },
+        {
+            "name": "cli - getbalance 2",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/main.go",
+            "args": [
+                "getbalance",
+                "-address", "1FzEorGvo8dsFMqEoC1VWb5GzyCTBsyf8Z",
+            ]
+        },
+        {
+            "name": "cli - print chain",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/main.go",
+            "args": ["printchain"]
+        },
     ]
 }

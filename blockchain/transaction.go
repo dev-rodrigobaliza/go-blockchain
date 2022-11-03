@@ -50,9 +50,9 @@ func NewTransaction(from, to string, amount int, UTXO *UTXOSet) *Transaction {
 		}
 	}
 
-	outputs = append(outputs, NewTxOutput(amount, []byte(to)))
+	outputs = append(outputs, NewTxOutput(amount, to))
 	if acc > amount {
-		outputs = append(outputs, NewTxOutput(acc-amount, []byte(from)))
+		outputs = append(outputs, NewTxOutput(acc-amount, from))
 	}
 
 	tx := Transaction{nil, inputs, outputs}
@@ -154,7 +154,7 @@ func (tx *Transaction) TrimmedCopy() Transaction {
 	}
 
 	for _, output := range tx.Outputs {
-		outputs = append(outputs, NewTxOutput(output.Value, output.PubKeyHash))
+		outputs = append(outputs, &TxOutput{output.Value, output.PubKeyHash})
 	}
 
 	txCopy := Transaction{tx.ID, inputs, outputs}
@@ -210,11 +210,14 @@ func (tx *Transaction) Verify(prevTXs map[string]*Transaction) bool {
 
 func CoinbaseTx(to, data string) *Transaction {
 	if data == "" {
-		data = fmt.Sprintf("coins to %s", to)
+		randData := make([]byte, 24)
+		_, err := rand.Read(randData)
+		utils.Handle(err)
+		data = fmt.Sprintf("%x", randData)
 	}
 
 	txIn := NewTxInput([]byte{}, -1, nil, []byte(data))
-	txOut := NewTxOutput(100, []byte(to))
+	txOut := NewTxOutput(20, to)
 
 	tx := Transaction{nil, []*TxInput{txIn}, []*TxOutput{txOut}}
 	tx.SetID()

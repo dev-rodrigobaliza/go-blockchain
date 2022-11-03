@@ -49,6 +49,8 @@ func DBexists() bool {
 func GetDB() *badger.DB {
 	path := CheckDBPath(false)
 	opts := badger.DefaultOptions(path)
+	opts.EventLogging = false
+	opts.Logger = nil
 	db, err := badger.Open(opts)
 	utils.Handle(err)
 
@@ -273,6 +275,10 @@ func (chain *BlockChain) SignTransaction(tx *Transaction, privKey ecdsa.PrivateK
 }
 
 func (chain *BlockChain) VerifyTransaction(tx *Transaction) bool {
+	if tx.IsCoinbase() {
+		return true
+	}
+
 	prevTXs := make(map[string]*Transaction)
 
 	for _, in := range tx.Inputs {

@@ -12,9 +12,9 @@ type TxOutput struct {
 	PubKeyHash []byte
 }
 
-func NewTxOutput(value int, address []byte) *TxOutput {
+func NewTxOutput(value int, address string) *TxOutput {
 	txo := TxOutput{value, nil}
-	txo.Lock(address)
+	txo.Lock([]byte(address))
 
 	return &txo
 }
