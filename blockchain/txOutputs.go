@@ -6,21 +6,21 @@ import (
 )
 
 type TxOutputs struct {
-	Outputs []*TxOutput
+	Outputs []TxOutput
 }
 
-func (t *TxOutputs) fromBytes(buffer []byte) error {
+func (t *TxOutputs) serialize() []byte {
+	buffer, err := json.Marshal(t)
+	utils.Handle(err)
+
+	return buffer
+}
+
+func (t *TxOutputs) deserialize(buffer []byte) error {
 	err := json.Unmarshal(buffer, t)
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (t *TxOutputs) toBytes() []byte {
-	buffer, err := json.Marshal(t)
-	utils.Handle(err)
-
-	return buffer
 }

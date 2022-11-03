@@ -13,11 +13,11 @@ import (
 const Difficulty = 14
 
 type ProofOfWork struct {
-	Block  *Block
+	Block  Block
 	Target *big.Int
 }
 
-func NewProof(b *Block) *ProofOfWork {
+func NewProof(b Block) *ProofOfWork {
 	target := big.NewInt(1)
 	target.Lsh(target, uint(256-Difficulty))
 

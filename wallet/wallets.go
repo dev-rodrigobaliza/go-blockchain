@@ -8,19 +8,15 @@ import (
 	"github.com/goccy/go-json"
 )
 
-const (
-	walletFile = "db/wallets.data"
-)
-
 type Wallets struct {
 	Wallets map[string]*Wallet `json:"wallets"`
 }
 
-func NewWallets() (*Wallets, error) {
+func NewWallets(nodeId string) (*Wallets, error) {
 	wallets := Wallets{}
 	wallets.Wallets = make(map[string]*Wallet)
 
-	err := wallets.LoadFile()
+	err := wallets.LoadFile(nodeId)
 
 	return &wallets, err
 }
@@ -48,15 +44,17 @@ func (ws *Wallets) GetWallet(address string) *Wallet {
 	return ws.Wallets[address]
 }
 
-func (ws *Wallets) LoadFile() error {
-	_, err := os.Stat(file())
+func (ws *Wallets) LoadFile(nodeId string) error {
+	file := checkWalletsPath(nodeId)
+
+	_, err := os.Stat(file)
 	if os.IsNotExist(err) {
 		return nil
 	}
 
 	var wallets Wallets
 
-	data, err := os.ReadFile(file())
+	data, err := os.ReadFile(file)
 	if err != nil {
 		return err
 	}
@@ -71,10 +69,11 @@ func (ws *Wallets) LoadFile() error {
 	return nil
 }
 
-func (ws *Wallets) SaveFile() {
-	data := ws.toBytes()
+func (ws *Wallets) SaveFile(nodeId string) {
+	file := checkWalletsPath(nodeId)
+	data := ws.serialize()
 
-	err := os.WriteFile(file(), data, 0644)
+	err := os.WriteFile(file, data, 0644)
 	utils.Handle(err)
 }
 
@@ -92,9 +91,18 @@ func (ws *Wallets) fromBytes(buffer []byte) error {
 	return nil
 }
 
-func (ws *Wallets) toBytes() []byte {
+func (ws *Wallets) serialize() []byte {
 	buffer, err := json.Marshal(ws)
 	utils.Handle(err)
 
 	return buffer
+}
+
+func (ws *Wallets) deserialize(buffer []byte) error {
+	err := json.Unmarshal(buffer, ws)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

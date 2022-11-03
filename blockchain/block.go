@@ -1,35 +1,37 @@
 package blockchain
 
 import (
-	"bytes"
-	"encoding/gob"
+	"time"
 
 	"github.com/dev-rodrigobaliza/go-blockchain/utils"
+	"github.com/goccy/go-json"
 )
 
 type Block struct {
-	Hash         []byte
-	Transactions []*Transaction
-	PrevHash     []byte
+	Timestamp    int64
+	Hash         []byte        `json:"hash,omitempty"`
+	Transactions []Transaction `json:"transactions,omitempty"`
+	PrevHash     []byte        `json:"prev_hash,omitempty"`
 	Nonce        int
+	Height       int
 }
 
-func CreateBlock(txs []*Transaction, prevHash []byte) *Block {
-	block := &Block{[]byte{}, txs, prevHash, 0}
+func NewBlock(txs []Transaction, prevHash []byte, height int) Block {
+	block := Block{time.Now().Unix(), []byte{}, txs, prevHash, 0, height}
 	pow := NewProof(block)
 	nonce, hash := pow.Run()
 
-	block.Hash = hash
+	block.Hash = hash[:]
 	block.Nonce = nonce
 
 	return block
 }
 
-func Genesis(coinbase *Transaction) *Block {
-	return CreateBlock([]*Transaction{coinbase}, []byte{})
+func Genesis(coinbase Transaction) Block {
+	return NewBlock([]Transaction{coinbase}, []byte{}, 0)
 }
 
-func (b *Block) HashTransactions() []byte {
+func (b Block) HashTransactions() []byte {
 	var txHashes [][]byte
 
 	for _, tx := range b.Transactions {
@@ -40,18 +42,18 @@ func (b *Block) HashTransactions() []byte {
 	return tree.RootNode.Data
 }
 
-func (b *Block) Serialize() []byte {
-	var res bytes.Buffer
-	encoder := gob.NewEncoder(&res)
-	utils.Handle(encoder.Encode(b))
+func (b Block) Serialize() []byte {
+	buffer, err := json.Marshal(b)
+	utils.Handle(err)
 
-	return res.Bytes()
+	return buffer
 }
 
-func (b *Block) Deserialize(data []byte) *Block {
-	var block Block
-	decoder := gob.NewDecoder(bytes.NewReader(data))
-	utils.Handle(decoder.Decode(&block))
+func (b Block) Deserialize(buffer []byte) error {
+	err := json.Unmarshal(buffer, b)
+	if err != nil {
+		return err
+	}
 
-	return &block
+	return nil
 }

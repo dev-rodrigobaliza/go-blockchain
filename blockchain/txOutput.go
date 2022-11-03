@@ -9,7 +9,7 @@ import (
 
 type TxOutput struct {
 	Value      int
-	PubKeyHash []byte
+	PubKeyHash []byte `json:"pub_key_hash,omitempty"`
 }
 
 func NewTxOutput(value int, address string) *TxOutput {

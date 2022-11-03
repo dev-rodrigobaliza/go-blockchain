@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	utxoPrefix   = []byte("utxo-")
+	utxoPrefix = []byte("utxo-")
 )
 
 type UTXOSet struct {
@@ -31,7 +31,7 @@ func (u *UTXOSet) Reindex() {
 			}
 			key = append(utxoPrefix, key...)
 
-			err = txn.Set(key, outs.toBytes())
+			err = txn.Set(key, outs.serialize())
 			utils.Handle(err)
 		}
 
@@ -40,7 +40,7 @@ func (u *UTXOSet) Reindex() {
 	utils.Handle(err)
 }
 
-func (u *UTXOSet) Update(block *Block) {
+func (u *UTXOSet) Update(block Block) {
 	db := u.Blockchain.Database
 
 	err := db.Update(func(txn *badger.Txn) error {
@@ -53,7 +53,7 @@ func (u *UTXOSet) Update(block *Block) {
 					utils.Handle(err)
 					var outs TxOutputs
 					err = item.Value(func(val []byte) error {
-						return outs.fromBytes(val)
+						return outs.deserialize(val)
 					})
 					utils.Handle(err)
 
@@ -70,7 +70,7 @@ func (u *UTXOSet) Update(block *Block) {
 						}
 					}
 
-					err = txn.Set(inID, updatedOuts.toBytes())
+					err = txn.Set(inID, updatedOuts.serialize())
 					utils.Handle(err)
 				}
 			}
@@ -79,7 +79,7 @@ func (u *UTXOSet) Update(block *Block) {
 			newOutputs.Outputs = append(newOutputs.Outputs, tx.Outputs...)
 
 			txID := append(utxoPrefix, tx.ID...)
-			err := txn.Set(txID, newOutputs.toBytes())
+			err := txn.Set(txID, newOutputs.serialize())
 			utils.Handle(err)
 		}
 
@@ -88,8 +88,8 @@ func (u *UTXOSet) Update(block *Block) {
 	utils.Handle(err)
 }
 
-func (u *UTXOSet) FindUnspentTransactions(pubKeyHash []byte) []*TxOutput {
-	var UTXOs []*TxOutput
+func (u *UTXOSet) FindUnspentTransactions(pubKeyHash []byte) []TxOutput {
+	var UTXOs []TxOutput
 
 	db := u.Blockchain.Database
 
@@ -103,7 +103,7 @@ func (u *UTXOSet) FindUnspentTransactions(pubKeyHash []byte) []*TxOutput {
 			var outs TxOutputs
 			item := it.Item()
 			err := item.Value(func(val []byte) error {
-				return outs.fromBytes(val)
+				return outs.deserialize(val)
 			})
 			utils.Handle(err)
 
@@ -137,7 +137,7 @@ func (u *UTXOSet) FindSpendableOutputs(pubKeyHash []byte, amount int) (int, map[
 			var outs TxOutputs
 			item := it.Item()
 			err := item.Value(func(val []byte) error {
-				return outs.fromBytes(val)
+				return outs.deserialize(val)
 			})
 			utils.Handle(err)
 			id := item.Key()

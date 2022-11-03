@@ -10,17 +10,15 @@ type BlockChainIterator struct {
 	Database    *badger.DB
 }
 
-func (iter *BlockChainIterator) Next() *Block {
-	var block *Block
+func (iter *BlockChainIterator) Next() Block {
+	var block Block
 
 	err := iter.Database.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(iter.CurrentHash)
 		utils.Handle(err)
 
 		err = item.Value(func(val []byte) error {
-			block = block.Deserialize(val)
-
-			return nil
+			return block.Deserialize(val)
 		})
 
 		return err

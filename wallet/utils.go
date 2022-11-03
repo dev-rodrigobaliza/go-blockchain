@@ -3,11 +3,17 @@ package wallet
 import (
 	"bytes"
 	"crypto/sha256"
+	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/dev-rodrigobaliza/go-blockchain/base58"
 	"github.com/dev-rodrigobaliza/go-blockchain/utils"
+)
+
+const (
+	walletsPath = "wallets"
+	walletsFile = "wallets_%s.data"
 )
 
 func checksum(payload []byte) []byte {
@@ -17,11 +23,15 @@ func checksum(payload []byte) []byte {
 	return secondHash[:ChecksumLength]
 }
 
-func file() string {
-	curPath, err := os.Getwd()
-	utils.Handle(err)
+func checkWalletsPath(nodeId string) string {
+	systemPath := utils.CheckSystemPath()
+	wsPath := filepath.Join(systemPath, walletsPath)
+	_ = os.Mkdir(wsPath, os.ModePerm)
 
-	return filepath.Join(curPath, walletFile)
+	wFile := fmt.Sprintf(walletsFile, nodeId)
+	wPath := filepath.Join(wsPath, wFile)
+
+	return wPath
 }
 
 func ValidateAddress(address string) bool {

@@ -5,23 +5,51 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "cli - create wallet",
+            "name": "cli - create wallet - nodeId=3000",
             "type": "go",
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
-            "args": ["createwallet"]
+            "args": ["createwallet"],
+            "env": {
+                "NODE_ID": "3000",
+            }
         },
         {
-            "name": "cli - create blockchain",
+            "name": "cli - create wallet - nodeId=4000",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/main.go",
+            "args": ["createwallet"],
+            "env": {
+                "NODE_ID": "4000",
+            }
+        },
+        {
+            "name": "cli - create wallet - nodeId=5000",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/main.go",
+            "args": ["createwallet"],
+            "env": {
+                "NODE_ID": "5000",
+            }
+        },
+        {
+            "name": "cli - create blockchain - nodeId=3000",
             "type": "go",
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
             "args": [
                 "createblockchain",
-                "-address", "14RdqLFmyHnuVDXQd4cCvvabZfJgRDFbdn",
-            ]
+                "-address", "1GVmji4RkXmvfLKckrYTdJ4CNFQ8629tdj",
+            ],
+            "env": {
+                "NODE_ID": "3000",
+            }
         },
         {
             "name": "cli - list addresses",

@@ -15,25 +15,21 @@ import (
 
 	"github.com/dev-rodrigobaliza/go-blockchain/crypto"
 	"github.com/dev-rodrigobaliza/go-blockchain/utils"
-	"github.com/dev-rodrigobaliza/go-blockchain/wallet"
+	wal "github.com/dev-rodrigobaliza/go-blockchain/wallet"
 	"github.com/goccy/go-json"
 )
 
 type Transaction struct {
-	ID      []byte
-	Inputs  []*TxInput
-	Outputs []*TxOutput
+	ID      []byte     `json:"id,omitempty"`
+	Inputs  []TxInput  `json:"tx_input,omitempty"`
+	Outputs []TxOutput `json:"tx_output,omitempty"`
 }
 
-func NewTransaction(from, to string, amount int, UTXO *UTXOSet) *Transaction {
-	var inputs []*TxInput
-	var outputs []*TxOutput
+func NewTransaction(wallet *wal.Wallet, to string, amount int, UTXO *UTXOSet) Transaction {
+	var inputs []TxInput
+	var outputs []TxOutput
 
-	wallets, err := wallet.NewWallets()
-	utils.Handle(err)
-
-	w := wallets.GetWallet(from)
-	pubKeyHash := crypto.PublicKeyHash(w.PublicKey)
+	pubKeyHash := crypto.PublicKeyHash(wallet.PublicKey)
 
 	acc, validOutputs := UTXO.FindSpendableOutputs(pubKeyHash, amount)
 	if acc < amount {
@@ -45,21 +41,22 @@ func NewTransaction(from, to string, amount int, UTXO *UTXOSet) *Transaction {
 		utils.Handle(err)
 
 		for _, out := range outs {
-			input := NewTxInput(txID, out, nil, w.PublicKey)
+			input := NewTxInput(txID, out, nil, wallet.PublicKey)
 			inputs = append(inputs, input)
 		}
 	}
 
-	outputs = append(outputs, NewTxOutput(amount, to))
+	from := string(wallet.Address())
+	outputs = append(outputs, *NewTxOutput(amount, to))
 	if acc > amount {
-		outputs = append(outputs, NewTxOutput(acc-amount, from))
+		outputs = append(outputs, *NewTxOutput(acc-amount, from))
 	}
 
 	tx := Transaction{nil, inputs, outputs}
 	tx.ID = tx.Hash()
-	UTXO.Blockchain.SignTransaction(&tx, *w.GetPrivateKey())
+	UTXO.Blockchain.SignTransaction(tx, *wallet.GetPrivateKey())
 
-	return &tx
+	return tx
 }
 
 func (tx *Transaction) Serialize() []byte {
@@ -69,12 +66,13 @@ func (tx *Transaction) Serialize() []byte {
 	return buffer
 }
 
-func (tx *Transaction) Deserialize(data []byte) *Transaction {
-	var transaction Transaction
-	decoder := gob.NewDecoder(bytes.NewReader(data))
-	utils.Handle(decoder.Decode(&transaction))
+func (tx *Transaction) Deserialize(buffer []byte) error {
+	err := json.Unmarshal(buffer, tx)
+	if err != nil {
+		return err
+	}
 
-	return &transaction
+	return nil
 }
 
 func (tx *Transaction) Hash() []byte {
@@ -103,7 +101,7 @@ func (tx *Transaction) IsCoinbase() bool {
 	return len(tx.Inputs) == 1 && len(tx.Inputs[0].ID) == 0 && tx.Inputs[0].Out == -1
 }
 
-func (tx *Transaction) Sign(privKey *ecdsa.PrivateKey, prevTXs map[string]*Transaction) {
+func (tx *Transaction) Sign(privKey *ecdsa.PrivateKey, prevTXs map[string]Transaction) {
 	if tx.IsCoinbase() {
 		return
 	}
@@ -154,15 +152,15 @@ func (tx Transaction) String() string {
 }
 
 func (tx *Transaction) TrimmedCopy() Transaction {
-	var inputs []*TxInput
-	var outputs []*TxOutput
+	var inputs []TxInput
+	var outputs []TxOutput
 
 	for _, input := range tx.Inputs {
 		inputs = append(inputs, NewTxInput(input.ID, input.Out, nil, nil))
 	}
 
 	for _, output := range tx.Outputs {
-		outputs = append(outputs, &TxOutput{output.Value, output.PubKeyHash})
+		outputs = append(outputs, TxOutput{output.Value, output.PubKeyHash})
 	}
 
 	txCopy := Transaction{tx.ID, inputs, outputs}
@@ -170,7 +168,7 @@ func (tx *Transaction) TrimmedCopy() Transaction {
 	return txCopy
 }
 
-func (tx *Transaction) Verify(prevTXs map[string]*Transaction) bool {
+func (tx *Transaction) Verify(prevTXs map[string]Transaction) bool {
 	if tx.IsCoinbase() {
 		return true
 	}
@@ -216,7 +214,7 @@ func (tx *Transaction) Verify(prevTXs map[string]*Transaction) bool {
 	return true
 }
 
-func CoinbaseTx(to, data string) *Transaction {
+func CoinbaseTx(to, data string) Transaction {
 	if data == "" {
 		randData := make([]byte, 24)
 		_, err := rand.Read(randData)
@@ -227,8 +225,8 @@ func CoinbaseTx(to, data string) *Transaction {
 	txIn := NewTxInput([]byte{}, -1, nil, []byte(data))
 	txOut := NewTxOutput(20, to)
 
-	tx := Transaction{nil, []*TxInput{txIn}, []*TxOutput{txOut}}
+	tx := Transaction{nil, []TxInput{txIn}, []TxOutput{*txOut}}
 	tx.SetID()
 
-	return &tx
+	return tx
 }
