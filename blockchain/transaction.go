@@ -69,6 +69,14 @@ func (tx *Transaction) Serialize() []byte {
 	return buffer
 }
 
+func (tx *Transaction) Deserialize(data []byte) *Transaction {
+	var transaction Transaction
+	decoder := gob.NewDecoder(bytes.NewReader(data))
+	utils.Handle(decoder.Decode(&transaction))
+
+	return &transaction
+}
+
 func (tx *Transaction) Hash() []byte {
 	var hash [32]byte
 
